@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Subspace.money — Product Teardown</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=IBM+Plex+Mono:wght@400;500&family=Fraunces:ital,wght@0,300;0,600;1,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0d0d;
+    --surface: #141414;
+    --surface2: #1c1c1c;
+    --border: #2a2a2a;
+    --accent: #c8f560;
+    --accent2: #ff5c3a;
+    --accent3: #5ce0ff;
+    --text: #f0ede6;
+    --muted: #7a7a7a;
+    --card-bg: #161616;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 14px;
+    line-height: 1.7;
+  }
+
+  /* HEADER */
+  .header {
+    border-bottom: 1px solid var(--border);
+    padding: 48px 60px 40px;
+    position: relative;
+    overflow: hidden;
+  }
+  .header::before {
+    content: '';
+    position: absolute;
+    top: -80px; right: -80px;
+    width: 340px; height: 340px;
+    background: radial-gradient(circle, rgba(200,245,96,0.12) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .header-tag {
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 16px;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+  .header h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(32px, 5vw, 60px);
+    font-weight: 800;
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+    color: var(--text);
+    margin-bottom: 12px;
+  }
+  .header h1 span { color: var(--accent); }
+  .header-sub {
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-weight: 300;
+    font-size: 18px;
+    color: var(--muted);
+    margin-bottom: 28px;
+  }
+  .meta-row {
+    display: flex; gap: 24px; flex-wrap: wrap;
+  }
+  .meta-pill {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 5px 12px;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+  .meta-pill strong { color: var(--text); }
+
+  /* CONTEXT STRIP */
+  .context-strip {
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    padding: 20px 60px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 24px;
+  }
+  .stat { }
+  .stat-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.15em; color: var(--muted); margin-bottom: 4px; }
+  .stat-val { font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 700; color: var(--accent); }
+  .stat-note { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+  /* MAIN */
+  .main { max-width: 980px; margin: 0 auto; padding: 60px 40px; }
+
+  /* SECTION TITLE */
+  .section-label {
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 36px;
+  }
+  .section-label .num {
+    font-family: 'Syne', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    color: var(--accent);
+    background: rgba(200,245,96,0.08);
+    border: 1px solid rgba(200,245,96,0.25);
+    padding: 4px 10px;
+    border-radius: 3px;
+  }
+  .section-label h2 {
+    font-family: 'Syne', sans-serif;
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+
+  /* FEEDBACK CARDS */
+  .feedback-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-bottom: 28px;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+  .feedback-card:hover { border-color: #3a3a3a; }
+
+  .card-header {
+    display: flex; align-items: stretch;
+    border-bottom: 1px solid var(--border);
+  }
+  .card-num {
+    font-family: 'Syne', sans-serif;
+    font-size: 40px;
+    font-weight: 800;
+    color: var(--bg);
+    background: var(--accent);
+    padding: 16px 22px;
+    line-height: 1;
+    display: flex; align-items: center;
+    min-width: 74px;
+    justify-content: center;
+  }
+  .card-num.red { background: var(--accent2); }
+  .card-num.blue { background: var(--accent3); }
+
+  .card-title-block {
+    padding: 16px 22px;
+    flex: 1;
+  }
+  .card-pillar {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: var(--accent);
+    margin-bottom: 4px;
+  }
+  .card-pillar.red { color: var(--accent2); }
+  .card-pillar.blue { color: var(--accent3); }
+
+  .card-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    line-height: 1.2;
+  }
+
+  .card-body { padding: 24px; }
+
+  .trio { display: grid; grid-template-columns: 1fr; gap: 20px; }
+
+  .trio-item { }
+  .trio-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    color: var(--muted);
+    margin-bottom: 8px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .trio-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+  .trio-text {
+    font-size: 13.5px;
+    line-height: 1.75;
+    color: #ccc;
+  }
+  .trio-text strong { color: var(--text); font-weight: 500; }
+
+  .ship-box {
+    background: rgba(200,245,96,0.05);
+    border: 1px solid rgba(200,245,96,0.2);
+    border-radius: 6px;
+    padding: 14px 18px;
+  }
+  .ship-box.red {
+    background: rgba(255,92,58,0.05);
+    border-color: rgba(255,92,58,0.2);
+  }
+  .ship-box.blue {
+    background: rgba(92,224,255,0.05);
+    border-color: rgba(92,224,255,0.2);
+  }
+
+  /* PRIORITY TABLE */
+  .priority-section {
+    margin-top: 60px;
+    padding-top: 48px;
+    border-top: 1px solid var(--border);
+  }
+  .priority-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+  }
+  .priority-table th {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--muted);
+    text-align: left;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+  }
+  .priority-table td {
+    padding: 14px 14px;
+    border-bottom: 1px solid #1e1e1e;
+    font-size: 13px;
+    vertical-align: top;
+  }
+  .priority-table tr:last-child td { border-bottom: none; }
+  .priority-table td:first-child { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 16px; color: var(--accent); }
+
+  .badge {
+    display: inline-block;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    padding: 3px 8px;
+    border-radius: 3px;
+    font-weight: 600;
+  }
+  .badge-high { background: rgba(255,92,58,0.15); color: var(--accent2); border: 1px solid rgba(255,92,58,0.3); }
+  .badge-med { background: rgba(200,245,96,0.1); color: var(--accent); border: 1px solid rgba(200,245,96,0.25); }
+
+  /* SWOT */
+  .swot-section {
+    margin-top: 60px;
+    padding-top: 48px;
+    border-top: 1px solid var(--border);
+  }
+  .swot-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2px;
+    margin-top: 20px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .swot-cell {
+    background: var(--card-bg);
+    padding: 22px;
+  }
+  .swot-cell:nth-child(2) { border-left: 1px solid var(--border); }
+  .swot-cell:nth-child(3) { border-top: 1px solid var(--border); }
+  .swot-cell:nth-child(4) { border-top: 1px solid var(--border); border-left: 1px solid var(--border); }
+  .swot-head {
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+  }
+  .swot-head.s { color: var(--accent); }
+  .swot-head.w { color: var(--accent2); }
+  .swot-head.o { color: var(--accent3); }
+  .swot-head.t { color: #b085ff; }
+  .swot-list { list-style: none; }
+  .swot-list li {
+    font-size: 12.5px;
+    color: #bbb;
+    padding: 5px 0;
+    border-bottom: 1px solid #1e1e1e;
+    line-height: 1.5;
+  }
+  .swot-list li:last-child { border-bottom: none; }
+  .swot-list li::before { content: '→ '; color: var(--muted); }
+
+  /* FOOTER */
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 28px 60px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  footer .left { font-size: 12px; color: var(--muted); }
+  footer .right {
+    font-family: 'Syne', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 0.05em;
+  }
+
+  @media (max-width: 640px) {
+    .header, .context-strip, footer { padding-left: 24px; padding-right: 24px; }
+    .main { padding: 40px 24px; }
+    .swot-grid { grid-template-columns: 1fr; }
+    .swot-cell:nth-child(2) { border-left: none; border-top: 1px solid var(--border); }
+    .swot-cell:nth-child(4) { border-left: none; }
+    .card-num { font-size: 28px; min-width: 54px; padding: 14px 16px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-tag">Product Intern Assignment · Job ID: ER-FO-IND</div>
+  <h1><span>Subspace.money</span><br>Product Teardown</h1>
+  <div class="header-sub">5 sharpest feedbacks — observed, diagnosed, shipped.</div>
+  <div class="meta-row">
+    <div class="meta-pill"><strong>Company</strong> Subspace (Grow90)</div>
+    <div class="meta-pill"><strong>Category</strong> Consumer Fintech</div>
+    <div class="meta-pill"><strong>ARR</strong> ₹36.5 Cr (FY25)</div>
+    <div class="meta-pill"><strong>Status</strong> Bootstrapped & Profitable</div>
+    <div class="meta-pill"><strong>Deadline</strong> 31 May 2026</div>
+  </div>
+</div>
+
+<!-- CONTEXT STRIP -->
+<div class="context-strip">
+  <div class="stat">
+    <div class="stat-label">Core Promise</div>
+    <div class="stat-val" style="font-size:14px; margin-top:4px;">Save · Share · Rent</div>
+    <div class="stat-note">Subscriptions, group finance, rentals</div>
+  </div>
+  <div class="stat">
+    <div class="stat-label">Key Moat</div>
+    <div class="stat-val" style="font-size:14px; margin-top:4px;">Negotiate API</div>
+    <div class="stat-note">Auto price negotiation — hard to replicate</div>
+  </div>
+  <div class="stat">
+    <div class="stat-label">ICP</div>
+    <div class="stat-val" style="font-size:14px; margin-top:4px;">Urban Indians 18–30</div>
+    <div class="stat-note">Students, young professionals, cost-conscious</div>
+  </div>
+  <div class="stat">
+    <div class="stat-label">Risk</div>
+    <div class="stat-val" style="font-size:14px; color: var(--accent2); margin-top:4px;">Admin trust gap</div>
+    <div class="stat-note">Seen in Play Store reviews</div>
+  </div>
+</div>
+
+<!-- MAIN CONTENT -->
+<div class="main">
+
+  <div class="section-label">
+    <span class="num">01 — 05</span>
+    <h2>Five Sharpest Feedbacks</h2>
+  </div>
+
+  <!-- FEEDBACK 1 -->
+  <div class="feedback-card">
+    <div class="card-header">
+      <div class="card-num">1</div>
+      <div class="card-title-block">
+        <div class="card-pillar">UX · Onboarding</div>
+        <div class="card-title">The homepage forces login before showing value — killing top-of-funnel conversion</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="trio">
+        <div class="trio-item">
+          <div class="trio-label">Observed</div>
+          <div class="trio-text">
+            On visiting <strong>subspace.money</strong>, the landing screen immediately shows a login modal (Continue with WhatsApp or phone number). There is <strong>no preview of deals, no visible savings examples, no social proof</strong> — just a login wall. The "Favourite Brands" and "Shared Subscriptions" sections below are placeholder skeletons that only load post-auth. A first-time visitor sees nothing of value before being asked to hand over their phone number.
+          </div>
+        </div>
+        <div class="trio-item">
+          <div class="trio-label">Problem</div>
+          <div class="trio-text">
+            This is a <strong>classic conversion killer</strong>. The value proposition — "up to 80% off Netflix, Prime, Hotstar" — is not shown before the ask. For a consumer fintech app where trust is everything, asking for a phone number with zero demonstrated value increases drop-off dramatically. Users who arrive from word-of-mouth or social ads are not given the "aha moment" before being gated. Subspace is competing with Rocket Money, Wallet, and similar apps globally — all of which show dashboards and live data before sign-up.
+          </div>
+        </div>
+        <div class="trio-item">
+          <div class="trio-label">Ship Instead</div>
+          <div class="ship-box">
+            Build a <strong>public, unauthenticated homepage</strong> that shows: (1) a live ticker of current deals ("Netflix Premium at ₹149/month — 5 slots open"), (2) a sample shared group dashboard with blurred-out member names, and (3) a savings calculator — "Enter your current Netflix spend → See what you'd save on Subspace." Login should be deferred to the moment of transaction intent. This mirrors how Zepto and Blinkit let you browse before forcing sign-in, dramatically lowering friction.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FEEDBACK 2 -->
+  <div class="feedback-card">
+    <div class="card-header">
+      <div class="card-num red">2</div>
+      <div class="card-title-block">
+        <div class="card-pillar red">Features · Trust & Safety</div>
+        <div class="card-title">Shared subscription model has a critical admin accountability gap — users lose money with no recourse</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="trio">
+        <div class="trio-item">
+          <div class="trio-label">Observed</div>
+          <div class="trio-text">
+            In the Google Play Store reviews, a user wrote: <em>"Subspace make very bad rule for the user — once if you pay then you lose your money. If the subscriber doesn't allow you to login… subscription doesn't refund the amount."</em> Another review noted: <em>"had problems with the shared subscription as admin never replied."</em> In the shared subscription model, the <strong>admin holds total power</strong> — they can log the paying member out at any time, and there is no platform-enforced SLA for access or refund.
+          </div>
+        </div>
+        <div class="trio-item">
+          <div class="trio-label">Problem</div>
+          <div class="trio-text">
+            The entire shared subscription business model rests on <strong>user-to-user trust</strong>, but Subspace currently provides no escrow, no admin rating system, no access-guarantee SLA, and no automated refund trigger if access is denied. This is a <strong>structural trust deficiency</strong> — not a support issue. At scale, even a 5% bad-actor admin rate destroys retention and NPS. For a bootstrapped company with ₹36.5 Cr ARR, this is the single biggest risk to network effect compounding.
+          </div>
+        </div>
+        <div class="trio-item">
+          <div class="trio-label">Ship Instead</div>
+          <div class="ship-box red">
+            Introduce an <strong>"Admin Reliability Score"</strong> (visible on group listings) built from: uptime compliance, response time to access complaints, and historical kick-out rate. Implement <strong>payment escrow</strong> — member funds are held for 48 hours post-payment; released to admin only after access is confirmed via an in-app ping. If access fails within 24 hours, auto-trigger refund. This creates a structurally safe marketplace, not just a reactive support system.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FEEDBACK 3 -->
+  <div class="feedback-card">
+    <div class="card-header">
+      <div class="card-num">3</div>
+      <div class="card-title-block">
+        <div class="card-pillar">GTM · ICP Clarity</div>
+        <div class="card-title">The app tries to be three products at once — subscriptions, rentals, and gift cards — but communicates none of them clearly to new users</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="trio">
+        <div class="trio-item">
+          <div class="trio-label">Observed</div>
+          <div class="trio-text">
+            The Play Store listing pitches: shared subscriptions (Netflix, Prime), rental delivery in 10 minutes (gadgets), and discounted gift cards (Swiggy, Zomato, Amazon) — all in the same breath. The app navigation has Home, Explore, Wallet, Chat, and Account. On the website, the hero says "Your subscription management platform" but delivery-in-minutes is also front and centre. The <strong>product identity is fragmented</strong> across three very different use cases with different ICPs and different trust requirements.
+          </div>
+        </div>
+        <div class="trio-item">
+          <div class="trio-label">Problem</div>
+          <div class="trio-text">
+            A college student saving on OTT has a completely different mental model than someone renting a power drill for a day. <strong>Conflating three products in one app weakens positioning</strong> for each — you don't win the "cheapest OTT" user AND the "instant rental" user with the same top-of-funnel message. This dilutes word-of-mouth ("what does Subspace actually do?"), makes referral loops weaker, and makes ad targeting inefficient. Subspace's bootstrapped model requires very high referral-driven acquisition — unclear positioning is the enemy of that.
+          </div>
+        </div>
+        <div class="trio-item">
+          <div class="trio-label">Ship Instead</div>
+          <div class="ship-box">
+            Introduce <strong>mode-based onboarding</strong>: after sign-up, ask "What brings you here?" with three clear paths — "Save on subscriptions," "Rent something," "Get gift cards cheaper." Each path lands on a tailored home feed. This doesn't require splitting the app — just contextual entry points and personalised first sessions. Run a 30-day A/B test: users with personalised onboarding vs. current generic home. Hypothesis: D7 retention improves by 15%+ for the personalised cohort.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FEEDBACK 4 -->
+  <div class="feedback-card">
+    <div class="card-header">
+      <div class="card-num blue">4</div>
+      <div class="card-title-block">
+        <div class="card-pillar blue">Competitor Analysis · Features</div>
+        <div class="card-title">The Negotiate API — Subspace's strongest moat — is invisible to the user and not leveraged as a growth surface</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="trio">
+        <div class="trio-item">
+          <div class="trio-label">Observed</div>
+          <div class="trio-text">
+            Subspace's Negotiate API — which automatically negotiates prices with brands on behalf of users — is mentioned in investor/analyst profiles (Tracxn, the assignment brief itself) but is <strong>not prominently surfaced anywhere in the user-facing product</strong>. There is no "Negotiate my bill" CTA on the home screen, no success story ("We saved 1,200 users ₹450 on their Hotstar bill this month"), and no opt-in flow that makes the negotiation feel like a distinct, exciting feature. Comparably, Rocket Money's bill negotiation is its hero feature — prominently shown, with success rates disclosed.
+          </div>
+        </div>
+        <div class="trio-item">
+          <div class="trio-label">Problem</div>
+          <div class="trio-text">
+            A product moat that users don't know about doesn't drive retention or referrals. The Negotiate API is <strong>genuinely hard to replicate</strong> — it's the one feature that no Indian competitor has matched. But if a user churns before ever discovering it, or never shares it with a friend, the moat doesn't compound. This is a classic product marketing gap: the most defensible feature is buried rather than being the primary growth engine.
+          </div>
+        </div>
+        <div class="trio-item">
+          <div class="trio-label">Ship Instead</div>
+          <div class="ship-box blue">
+            Make "Negotiate" a <strong>first-class surface</strong>. Add a persistent "Negotiate a Bill" card on the home screen with a live counter ("₹2.3 Cr saved for users this year"). Build a <strong>share-worthy savings certificate</strong> — after a successful negotiation, generate an auto-shareable card: "Subspace just saved me ₹380 on my Canva subscription 🎉" with a referral code baked in. This turns every negotiation win into a viral acquisition loop — a flywheel that's both defensible and scalable with zero ad spend.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FEEDBACK 5 -->
+  <div class="feedback-card">
+    <div class="card-header">
+      <div class="card-num">5</div>
+      <div class="card-title-block">
+        <div class="card-pillar">UX · Potential Collaborations</div>
+        <div class="card-title">No UPI auto-pay integration for subscription renewals — a massive friction point in the payment loop</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="trio">
+        <div class="trio-item">
+          <div class="trio-label">Observed</div>
+          <div class="trio-text">
+            When a user wants to renew a shared subscription on Subspace, they must <strong>manually initiate payment</strong> each cycle via the app. There is no UPI AutoPay (e-mandate) setup, no auto-debit reminder linked to the renewal date, and no "set and forget" option for recurring group contributions. The website's login modal offers "Continue with WhatsApp" — suggesting deep WhatsApp integration — but this is not extended to payment nudges or auto-pay flows.
+          </div>
+        </div>
+        <div class="trio-item">
+          <div class="trio-label">Problem</div>
+          <div class="trio-text">
+            Subscription sharing is a recurring behaviour — but it requires recurring payment friction right now. Every renewal is a churn risk. A user who forgets to pay gets kicked from the group; the group admin loses a paying member; Subspace loses a transaction. For a platform with <strong>90%+ AI-powered ops</strong>, the payment loop is ironically the most manual part of the experience. India's UPI AutoPay infrastructure (NACH e-mandates, UPI recurring) makes this entirely solvable — and competitors in the recurring billing space (Razorpay Subscriptions, Cashfree) have already standardised it.
+          </div>
+        </div>
+        <div class="trio-item">
+          <div class="trio-label">Ship Instead</div>
+          <div class="ship-box">
+            Integrate <strong>UPI AutoPay (e-mandate)</strong> at group join time: "Set up auto-pay so you never lose access." Partner with <strong>Setu or Cashfree</strong> for UPI recurring mandate infrastructure (both have developer-friendly APIs). Additionally, build a <strong>WhatsApp payment reminder bot</strong> — 3 days before renewal, send a WhatsApp message: "Your Netflix group renews in 3 days. Tap to confirm or switch group." This reduces involuntary churn, increases admin retention, and makes the subscription lifecycle fully automated — consistent with Subspace's "90% AI-native ops" brand promise.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PRIORITY TABLE -->
+  <div class="priority-section">
+    <div class="section-label">
+      <span class="num">PRIORITY</span>
+      <h2>Prioritisation Logic</h2>
+    </div>
+
+    <table class="priority-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Feedback</th>
+          <th>Impact</th>
+          <th>Effort</th>
+          <th>Priority</th>
+          <th>Why Now</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>2</td>
+          <td>Admin trust / escrow system</td>
+          <td>Retention + NPS</td>
+          <td>Medium</td>
+          <td><span class="badge badge-high">P0</span></td>
+          <td>Active user harm; churn + bad press risk</td>
+        </tr>
+        <tr>
+          <td>5</td>
+          <td>UPI AutoPay integration</td>
+          <td>Involuntary churn</td>
+          <td>Medium</td>
+          <td><span class="badge badge-high">P0</span></td>
+          <td>Every renewal is a churn event without it</td>
+        </tr>
+        <tr>
+          <td>4</td>
+          <td>Surface the Negotiate API</td>
+          <td>Acquisition + virality</td>
+          <td>Low</td>
+          <td><span class="badge badge-med">P1</span></td>
+          <td>Zero-cost growth lever; moat already built</td>
+        </tr>
+        <tr>
+          <td>1</td>
+          <td>Remove pre-login wall</td>
+          <td>Top-of-funnel CVR</td>
+          <td>Low</td>
+          <td><span class="badge badge-med">P1</span></td>
+          <td>Quick win; directly improves paid CAC efficiency</td>
+        </tr>
+        <tr>
+          <td>3</td>
+          <td>Mode-based onboarding</td>
+          <td>D7 retention</td>
+          <td>Medium</td>
+          <td><span class="badge badge-med">P2</span></td>
+          <td>Important but needs data; A/B test first</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- SWOT -->
+  <div class="swot-section">
+    <div class="section-label">
+      <span class="num">SWOT</span>
+      <h2>Strategic Context</h2>
+    </div>
+    <div class="swot-grid">
+      <div class="swot-cell">
+        <div class="swot-head s">Strengths</div>
+        <ul class="swot-list">
+          <li>Bootstrapped & profitable — ₹36.5 Cr ARR</li>
+          <li>Negotiate API — genuinely unique moat</li>
+          <li>Network effects in group sharing</li>
+          <li>AI-native ops (90% automated)</li>
+          <li>India's first subscription marketplace</li>
+        </ul>
+      </div>
+      <div class="swot-cell">
+        <div class="swot-head w">Weaknesses</div>
+        <ul class="swot-list">
+          <li>Trust gap in admin-member model</li>
+          <li>Fragmented product identity</li>
+          <li>Manual payment loops create churn</li>
+          <li>Login wall kills cold traffic conversion</li>
+          <li>Moat (Negotiate API) not user-facing</li>
+        </ul>
+      </div>
+      <div class="swot-cell">
+        <div class="swot-head o">Opportunities</div>
+        <ul class="swot-list">
+          <li>UPI AutoPay infra mature & accessible</li>
+          <li>300M+ young Indians seeking savings</li>
+          <li>WhatsApp as distribution layer</li>
+          <li>Local subscription marketplace (uncontested)</li>
+          <li>Viral savings certificates → referral loops</li>
+        </ul>
+      </div>
+      <div class="swot-cell">
+        <div class="swot-head t">Threats</div>
+        <ul class="swot-list">
+          <li>INDmoney / myPaisaa expanding into subscriptions</li>
+          <li>Platform risk: Netflix cracking down on sharing</li>
+          <li>One viral bad-actor story → brand damage</li>
+          <li>Razor-thin margins if Negotiate API scales poorly</li>
+          <li>Well-funded global players entering India</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="left">Subspace.money · Product Teardown · Job ID: ER-FO-IND · Submitted 31 May 2026</div>
+  <div class="right">Vocallabs.ai · Subspace.money · Risk Inn</div>
+</footer>
+
+</body>
+</html>
